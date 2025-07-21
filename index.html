@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MY GAME</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #gameContainer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #unity-canvas {
+            background: #000;
+            /* Размеры будут установлены динамически */
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="unity-canvas"></canvas>
+    </div>
+
+    <script>
+        var buildUrl = "Build";
+        var loaderUrl = buildUrl + "/sfdf.loader.js";
+        var config = {
+            dataUrl: buildUrl + "/sfdf.data",
+            frameworkUrl: buildUrl + "/sfdf.framework.js",
+            codeUrl: buildUrl + "/sfdf.wasm",
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "{{ COMPANY_NAME }}",
+            productName: "{{ PRODUCT_NAME }}",
+            productVersion: "{{ PRODUCT_VERSION }}",
+            devicePixelRatio: 1 // Отключаем автоматическое масштабирование под DPI
+        };
+
+        // Ожидаемое соотношение сторон игры (например 16:9)
+        const targetAspectRatio = 16 / 9; // Измените на ваше соотношение
+        
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            const canvas = document.getElementById('unity-canvas');
+            
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            const containerAspectRatio = containerWidth / containerHeight;
+            
+            let width, height;
+            
+            if (containerAspectRatio > targetAspectRatio) {
+                // Контейнер шире, чем игра - масштабируем по высоте
+                height = containerHeight;
+                width = height * targetAspectRatio;
+            } else {
+                // Контейнер уже, чем игра - масштабируем по ширине
+                width = containerWidth;
+                height = width / targetAspectRatio;
+            }
+            
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+        }
+
+        // Инициализация и обработка ресайза
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+            createUnityInstance(document.getElementById("unity-canvas"), config, () => {
+                // После загрузки Unity вызываем ресайз
+                resizeCanvas();
+                
+                // Обработчик изменения размера окна
+                window.addEventListener('resize', () => {
+                    resizeCanvas();
+                    
+                    // Если нужно, можно уведомить Unity о изменении размера
+                    if (typeof unityInstance !== 'undefined') {
+                        unityInstance.SendMessage('Main Camera', 'OnWindowResize');
+                    }
+                });
+            });
+        };
+        document.body.appendChild(script);
+    </script>
+</body>
+</html>
