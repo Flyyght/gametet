@@ -1,143 +1,254 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Unity WebGL Player | AllTheGames</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="./style.css">
+
+    <!-- Yandex Games SDK -->
+    <script src="/sdk.js"></script>
+
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      
-      body, html {
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #231F20;
-      }
-      
-      #unity-container {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-      
-      #unity-canvas {
-        width: 100%;
-        height: 100%;
-        background: #231F20;
-      }
-      
-      #unity-fullscreen-button {
-        position: absolute;
-        right: 20px;
-        bottom: 20px;
-        width: 50px;
-        height: 50px;
-        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>') no-repeat center;
-        background-size: 60%;
-        background-color: rgba(0, 0, 0, 0.3);
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        z-index: 100;
-        transition: all 0.3s;
-        display: none;
-      }
-      
-      #unity-fullscreen-button:hover {
-        background-color: rgba(0, 0, 0, 0.5);
-      }
-      
-      #unity-loading {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        color: white;
-        font-family: Arial, sans-serif;
-      }
+        canvas:focus {
+            outline: none;
+        }
+
+        html, body {
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+            height: 100%;
+        }
     </style>
-  </head>
-  <body>
-    <div id="unity-container">
-      <canvas id="unity-canvas" tabindex="-1"></canvas>
-      <button id="unity-fullscreen-button" title="Fullscreen"></button>
-      <div id="unity-loading">Loading...</div>
+
+    <!-- Additional head modules -->
+
+</head>
+<body class="dark">
+
+    <div id="unity-container" class="unity-desktop">
+        <canvas id="unity-canvas" tabindex="-1"></canvas>
+    </div>
+    <div id="loading-cover" style="display:none;">
+        <div id="unity-loading-bar">
+            <div id="unity-logo"><img src="Images/logo.png"></div>
+            <div id="unity-progress-bar-empty" style="display: none;">
+                <div id="unity-progress-bar-full"></div>
+            </div>
+            <div class="spinner"></div>
+        </div>
     </div>
 
+    <!-- Additional body modules -->
+
     <script>
-      // Загрузка и инициализация Unity
-      var buildUrl = "Build/";
-      var loaderUrl = buildUrl + "xcx v.loader.js";
-      var config = {
-        dataUrl: buildUrl + "xcx v.data.unityweb",
-        frameworkUrl: buildUrl + "xcx v.framework.js.unityweb",
-        codeUrl: buildUrl + "xcx v.wasm.unityweb",
+        const hideFullScreenButton = "";
+        const buildUrl = "Build";
+        const loaderUrl = buildUrl + "/dfsfd.loader.js";
+        const config = {
+            dataUrl: buildUrl + "/dfsfd.data.br",
+            frameworkUrl: buildUrl + "/dfsfd.framework.js.br",
+            codeUrl: buildUrl + "/dfsfd.wasm.br",
         streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        productName: "AllTheGames",
-        productVersion: "0.1",
-      };
+            companyName: "DefaultCompany",
+            productName: "AllTheGames",
+            productVersion: "0.1"
+        };
 
-      // Адаптация под мобильные устройства
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        
-        var canvas = document.querySelector("#unity-canvas");
-        canvas.style.width = window.innerWidth + 'px';
-        canvas.style.height = window.innerHeight + 'px';
-      }
+        const container = document.querySelector("#unity-container");
+        const canvas = document.querySelector("#unity-canvas");
+        const loadingCover = document.querySelector("#loading-cover");
+        const progressBarEmpty = document.querySelector("#unity-progress-bar-empty");
+        const progressBarFull = document.querySelector("#unity-progress-bar-full");
+        const spinner = document.querySelector('.spinner');
 
-      // Полноэкранный режим
-      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
-      
-      function toggleFullscreen() {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(err => {
-            console.error(`Error attempting to enable fullscreen: ${err.message}`);
-          });
-          fullscreenButton.title = 'Exit Fullscreen';
-          fullscreenButton.style.backgroundImage = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>\')';
-        } else {
-          if (document.exitFullscreen) {
-            document.exitFullscreen();
-            fullscreenButton.title = 'Fullscreen';
-            fullscreenButton.style.backgroundImage = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>\')';
-          }
+        const canFullscreen = (function () {
+            for (const key of [
+                'exitFullscreen',
+                'webkitExitFullscreen',
+                'webkitCancelFullScreen',
+                'mozCancelFullScreen',
+                'msExitFullscreen',
+            ]) {
+                if (key in document) {
+                    return true;
+                }
+            }
+            return false;
+        }());
+
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            container.className = "unity-mobile";
+            
         }
-      }
 
-      fullscreenButton.addEventListener("click", toggleFullscreen);
+        // The background image when loading the game. When building a build, the code changes depending on the project settings.
+        
+        loadingCover.style.display = "";
 
-      // Обработчик изменения размера
-      function resizeUnityCanvas() {
-        var canvas = document.querySelector("#unity-canvas");
-        var container = document.querySelector("#unity-container");
-        canvas.width = container.clientWidth * window.devicePixelRatio;
-        canvas.height = container.clientHeight * window.devicePixelRatio;
-      }
+        let StartUnityInstance;
+        let ygGameInstance = null;
+        let ysdk = null;
+        let initYSDK = false;
+        let initGame = false;
+        let syncInit = false;
+        const NO_DATA = 'no data';
 
-      window.addEventListener("resize", resizeUnityCanvas);
-      resizeUnityCanvas();
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        function FocusGame() {
+            window.focus();
+            canvas.focus();
+        }
+        window.addEventListener('pointerdown', () => {
+            FocusGame();
+        });
+        window.addEventListener('touchstart', () => {
+            FocusGame();
+        });
 
-      // Загрузка Unity
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        document.getElementById("unity-loading").style.display = "none";
-        createUnityInstance(document.querySelector("#unity-canvas"), config);
-      };
-      document.body.appendChild(script);
+        document.addEventListener('visibilitychange', function () {
+            if (ysdk !== null && initGame == true) {
+                if (document.hidden) {
+                    YG2Instance('SetFocusWindowGame', 'false');
+                }
+                else {
+                    YG2Instance('SetFocusWindowGame', 'true');
+
+                    if ((ysdk.deviceInfo.isMobile() || ysdk.deviceInfo.isTablet()) && ysdk.screen.fullscreen.status == 'off')
+                        ysdk.screen.fullscreen.request();
+                }
+            }
+        });
+
+        const script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+            StartUnityInstance = function () {
+                createUnityInstance(canvas, config, (progress) => {
+                    spinner.style.display = "none";
+                    progressBarEmpty.style.display = "";
+                    const adjustedProgress = Math.max(progress, 0.05);
+                    progressBarFull.style.width = `${100 * adjustedProgress}%`;
+                }).then((unityInstance) => {
+                    ygGameInstance = unityInstance;
+                    loadingCover.style.display = "none";
+                }).catch((message) => {
+                    console.error(message);
+                });
+            };
+            
+            if (IsLocalHost() || syncInit)
+                StartUnityInstance_IfUnloaded();
+        };
+
+        function StartUnityInstance_IfUnloaded() {
+            if (spinner.style.display !== "none")
+                StartUnityInstance();
+        }
+
+        function IsLocalHost() {
+            try {
+                if (window.top !== window) {
+                    console.warn("The application is running in an iframe");
+                    return false;
+                }
+
+                const host = window.location.hostname;
+                if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")) {
+                    LogStyledMessage("Local Host");
+                    return true;
+                }
+            } 
+            catch (error) {
+                console.error("Error checking the local host:", error);
+                return false;
+            }
+        }
+
+        function YG2Instance(method) {
+            if (ygGameInstance == null)
+                return;
+
+            if (!initGame) {
+                setTimeout(function () {
+                    if (ygGameInstance)
+                        ygGameInstance.SendMessage('YG2Instance', method);
+                }, 100);
+            }
+            else {
+                ygGameInstance.SendMessage('YG2Instance', method);
+            }
+                
+        }
+        function YG2Instance(method, arg) {
+            if (ygGameInstance == null)
+                return;
+
+            if (!initGame) {
+                setTimeout(function () {
+                    ygGameInstance.SendMessage('YG2Instance', method, arg);
+                }, 100);
+            }
+            else {
+                ygGameInstance.SendMessage('YG2Instance', method, arg);
+            }
+        }
+
+        function LogStyledMessage(message, style) {
+            console.log('%c' + message, style);
+        }
+        function LogStyledMessage(message) {
+            console.log('%c' + message, 'color: #FFDF73; background-color: #454545');
+        }
+
+        InitYSDK();
+        async function InitYSDK() {
+            try {
+                if (IsLocalHost()) return;
+
+                ysdk = await YaGames.init();
+
+                // Additional init0 modules
+
+                // Additional init1 modules
+
+                // Additional init2 modules
+
+                // Additional init modules
+
+                initYSDK = true;
+                if (ygGameInstance != null)
+                    ygGameInstance.SendMessage('YG2Instance', 'InitSDKComplete');
+
+                LogStyledMessage('Init YandexSDK Success');
+
+            } catch (e) {
+                console.error('CRASH Initialization SDK: ', e);
+            }
+
+            if (!IsLocalHost() && !syncInit)
+                StartUnityInstance_IfUnloaded();
+        }
+
+        function InitGame() {
+            initGame = true;
+
+            // Additional start modules
+        }
+
+        // Additional script modules
+LogStyledMessage('PluginYG2 v2.0032  build: 2');
+
+
+        document.body.appendChild(script);
     </script>
-  </body>
+</body>
 </html>
