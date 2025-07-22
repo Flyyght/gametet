@@ -1,0 +1,8 @@
+{
+  "name": "Wenom Template",
+  "description": "Responsive fullscreen WebGL template with SDK support",
+  "version": "1.0",
+  "width": 1920,
+  "height": 1080,
+  "fullscreen": true
+}
